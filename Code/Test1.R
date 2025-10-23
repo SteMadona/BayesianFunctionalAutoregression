@@ -1,3 +1,10 @@
+source("Code/UsefulFunctions.R")
+source("Code/ConjugatePosteriors.R")
+source("Code/GibbsSamplers.R")
+source("Code/MHforPsi.R")
+
+
+
 simulation_test1 <- function(x, n_fun, nbasis, noise_sd = 0.5, alpha, Phi){
   # spline basis
   B <- bs(x, df = nbasis, degree = 3)
@@ -22,6 +29,13 @@ simulation_test1 <- function(x, n_fun, nbasis, noise_sd = 0.5, alpha, Phi){
 }
 
 set.seed(100)
+
+x <- seq(0, 1, length.out = 200)
+
+test1 <- rnorm(12, 0, 1) #alpha0 vector
+test2 <-  matrix(rnorm(10*12), 10, 12)  #Gamma0 matrix
+test3 <- matrix(rnorm(12*12), 12, 12)   #A0 matrix
+
 
 alpha_test1 <- c(-2, 0.5, 1, 0, 1.5, -1, 0, 1.5, -1.5, -1, 1, 0)
 Phi_test1 <- riwish(205, diag(200))
@@ -124,15 +138,15 @@ apply(out_phi_mh$alpha, 1, mean)
 # PSI with MTMH -----------------------------------------------------------
 
 tic()
-out_psi_mtmh <- gibbs_sample_mtmh(df = df_test1, 
+out_psi_mtmh <- GibbsSampler_mtmh(df = df_test1, 
                                   a0 = 2, 
                                   b0 = 1, 
                                   avec0 = test1, 
                                   Sigma0 = diag(12), 
                                   V0 = diag(12), 
                                   Aprior = test3, 
-                                  R = 100,
-                                  burnin = 0,
+                                  R = 250,
+                                  burnin = 50,
                                   nbasis = 5,
                                   nu0 = 12, 
                                   S0 = diag(10), 
@@ -142,7 +156,7 @@ toc()
 
 
 out_psi_mtmh$n_acc  
-sigma_trace_phi_mtmh <- mcmc(out_psi_mtmh$sigma[50:100])
+sigma_trace_phi_mtmh <- mcmc(out_psi_mtmh$sigma)
 summary((sigma_trace_phi_mtmh))
 traceplot(log(sigma_trace_phi_mtmh))
 
