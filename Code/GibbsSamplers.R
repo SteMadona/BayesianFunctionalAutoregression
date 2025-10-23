@@ -1,4 +1,4 @@
-gibbs_sample_mh <- function(df, #functional data
+GibbsSampler_mh <- function(df, #functional data
                             a0, #a sigma prior
                             b0, #b sigma prior
                             avec0, #mean for alpha prior (should't be here)
@@ -120,7 +120,7 @@ gibbs_sample_mh <- function(df, #functional data
 }
 
 
-gibbs_sample_mtmh <- function(df, #functional data
+GibbsSampler_mtmh <- function(df, #functional data
                               a0, #a sigma prior
                               b0, #b sigma prior
                               avec0, #mean for alpha prior (should't be here)
