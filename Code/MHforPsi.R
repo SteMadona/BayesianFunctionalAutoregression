@@ -1,3 +1,25 @@
+loglik <- function(fs, mus, gs, sigma, D, Psi, nugget = 1e-8){
+  n <- nrow(fs); T <- ncol(fs)
+  
+  fs <- as.matrix(fs)
+  mus <- as.matrix(mus)
+  gs <- as.matrix(gs)
+  
+  Phi <- D %*% Psi %*% t(D)
+  Phi <- make_posdef(Phi) #+ diag(nugget, n)
+  Phi_inv <- solve(Phi)
+  ld_Phi <- logdet_spd(Phi)
+  
+  E <- fs - mus - gs  #n x t, every column is e_t
+  
+  quad <- sum(vapply(1:T, function(t){
+    as.numeric(crossprod(E[, t], Phi_inv %*% E[, t]))
+  }, numeric(1)))   #use of vapply to ensure getting a scalar output
+  
+  ll <- -.5 * (quad/sigma) - .5 * T * (n * log(sigma) + ld_Phi)
+  return(as.numeric(ll))
+}
+
 sample_Phi_fourier_mh <- function(fs, mus, gs, sigma, D, Psi, Phi, nu0, S0, n, n_acc){
   p <- ncol(D)
   

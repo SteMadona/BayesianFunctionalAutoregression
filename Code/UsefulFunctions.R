@@ -55,3 +55,14 @@ log_diwish <- function(X, nu, Psi){
   
   return(out)
 }
+
+make_fourier <- function(x, K) {
+  L <- max(x) - min(x)
+  xb <- (x - min(x)) / L  # scala su [0,1]
+  B <- matrix(NA, nrow=length(x), ncol=2*K)
+  for (k in 1:K) {
+    B[, 2*k-1] <- sin(2*pi*k*xb)
+    B[, 2*k]   <- cos(2*pi*k*xb)
+  }
+  return(B) # m x (2K)
+}
