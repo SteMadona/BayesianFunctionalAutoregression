@@ -171,3 +171,4 @@ mean(abs(apply(out_psi_mtmh$A, c(1, 2), mean)))
 
 View(apply(out_psi_mtmh$Phi, c(1, 2), mean))
 apply(out_psi_mtmh$alpha, 1, mean)
+View(Phi_test1)
