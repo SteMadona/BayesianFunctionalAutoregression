@@ -145,12 +145,12 @@ out_psi_mtmh <- GibbsSampler_mtmh(df = df_test1,
                                   Sigma0 = diag(12), 
                                   V0 = diag(12), 
                                   Aprior = test3, 
-                                  R = 1000,
-                                  burnin = 200,
+                                  R = 200,
+                                  burnin = 0,
                                   nbasis = 5,
                                   nu0 = 12, 
                                   S0 = diag(10), 
-                                  m = 300
+                                  m = 2000
 )
 toc()
 

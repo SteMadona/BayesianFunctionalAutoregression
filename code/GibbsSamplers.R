@@ -196,6 +196,7 @@ GibbsSampler_mtmh <- function(df, #functional data
   #Output structure
   out <- vector("list", R)
   accept_count <- 0
+  accept_vec <- numeric(R)
   
   
   for(i in 2:R){
@@ -226,7 +227,7 @@ GibbsSampler_mtmh <- function(df, #functional data
     Phi[, , i] <- out_Phi$Phi
     Psi[, , i] <- out_Phi$Psi
     n_acc <- out_Phi$n_acc
-    
+    accept_vec[i] <- out_Phi$acc
   }
   out <- list(
     sigma = sigma[-c(1:burnin)], 

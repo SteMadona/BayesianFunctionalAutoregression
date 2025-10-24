@@ -98,8 +98,8 @@ sample_Phi_fourier_mtmh <- function(fs, mus, gs, sigma, D, Psi, nu0, S0, n, m, n
   alpha <- min(1, exp(log_alpha))
   
   if (runif(1) < alpha) {
-    list(Phi = Phi_star, Psi = Psi_star, n_acc = n_acc + 1L)
+    list(Phi = Phi_star, Psi = Psi_star, n_acc = n_acc + 1L, acc = 1)
   } else {
-    list(Phi = make_posdef(D %*% Psi %*% t(D)), Psi = Psi, n_acc = n_acc)
+    list(Phi = make_posdef(D %*% Psi %*% t(D)), Psi = Psi, n_acc = n_acc, acc = 0)
   }
 }
