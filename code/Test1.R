@@ -1,7 +1,7 @@
-source("Code/UsefulFunctions.R")
-source("Code/ConjugatePosteriors.R")
-source("Code/GibbsSamplers.R")
-source("Code/MHforPsi.R")
+source("code/UsefulFunctions.R")
+source("code/ConjugatePosteriors.R")
+source("code/GibbsSamplers.R")
+source("code/MHforPsi.R")
 
 
 
@@ -145,12 +145,12 @@ out_psi_mtmh <- GibbsSampler_mtmh(df = df_test1,
                                   Sigma0 = diag(12), 
                                   V0 = diag(12), 
                                   Aprior = test3, 
-                                  R = 250,
-                                  burnin = 50,
+                                  R = 1000,
+                                  burnin = 200,
                                   nbasis = 5,
                                   nu0 = 12, 
                                   S0 = diag(10), 
-                                  m = 100
+                                  m = 300
 )
 toc()
 
@@ -172,3 +172,10 @@ mean(abs(apply(out_psi_mtmh$A, c(1, 2), mean)))
 View(apply(out_psi_mtmh$Phi, c(1, 2), mean))
 apply(out_psi_mtmh$alpha, 1, mean)
 View(Phi_test1)
+
+View(out_psi_mtmh$Phi[, ,800])
+
+saveRDS(out_psi_mtmh, file = "results/out_psi_mtmh.rds")
+
+
+out_prova <- readRDS("results/out_psi_mtmh.rds")
