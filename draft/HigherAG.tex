@@ -1,0 +1,39 @@
+\section{Higher Autoregressive Order}
+Until now, we have just considered an autoregressive model of order one for $g_t(x)$ component. We now want to generalize to the case of multiple autoregressive order. \\
+The model has still the form of \ref{generazione}, but now the definition of $g$ changes such as: 
+\begin{gather*}
+    g_t(x) = \sum_{j=1}^k \gamma_{tj}b_j(x) \\
+    \text{where} \\
+    \boldsymbol{\gamma}_t = \sum_{r=1}^p A_r \gamma_{t - r}
+\end{gather*}
+In doing so, we now have a number $p$ of autoregressive matrices. 
+The likelihood is still 
+\begin{equation}
+    L(f_1, ..., f_T | \sigma^2, \Phi, \boldsymbol{\alpha}, A_1, ..., A_p) = \prod_{t=1}^T \prod_{i=1}^n (2 \pi \sigma^2 \phi_i)^{-\frac{1}{2}} \exp \left\{- \frac{1}{2} \frac{\left(f_t(x_i) - \mu(x_i) - g_t(x_i)\right)^2}{\sigma^2 \phi_i} \right\}
+\end{equation}
+
+\subsection{Model setup}
+
+For \(t = p+1, \ldots, T\), we have
+\begin{equation*}
+    \gamma_t = \sum_{r=1}^p A_r \gamma_{t-r}, \qquad
+    g_t(x) = \sum_{j=1}^k \gamma_{tj} b_j(x), \qquad
+    y_t = f_t - \mu_t.
+\end{equation*}
+
+
+We then define the stacked lag vector
+\begin{gather*}
+\textbf{z}_t = [\, \boldsymbol{\gamma}_{t-1}^\top, \ldots, \boldsymbol{\gamma}_{t-p}^\top \,] \in \mathbb{R}^{1 \times pk} \\
+\text{and the concatenated autoregressive matrix} \\
+A = [\, A_1 \; A_2 \; \cdots \; A_p \,] \in \mathbb{R}^{k \times pk}.
+\end{gather*}
+
+And finally we stack observations across time:
+\begin{gather*}
+Y = [\, y_{p+1}, \ldots, y_T \,] \in \mathbb{R}^{k \times n}, \qquad
+Z = \begin{bmatrix}
+z_{p+1} \\ \vdots \\ z_T
+\end{bmatrix} \in \mathbb{R}^{n \times pk}, \qquad n = T - p.
+\end{gather*}
+

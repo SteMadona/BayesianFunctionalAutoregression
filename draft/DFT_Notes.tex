@@ -1,0 +1,50 @@
+\section{DFT notes}
+ A Fourier Series takes any periodic function in time and decomposes it as sum of a constant and then a series of sin and cosine (sinusoids). Each of these sinusoids are defined by their frequency $k$. 
+ \begin{equation}
+     f(t) = \frac{1}{2}a_0 + \sum_{k=1}^\infty (a_k \cos 2 \pi k t + b_k \sin 2\pi kt)
+ \end{equation} 
+ The question now becomes how to calculate $a_k$ and $b_k$ coefficients. To do so, we use the \textbf{Fourier Transform}. It's essentially the same concept as computing the correlation, because you're multiplying a function (in our case the signal) by an analysing function (which in our case are sinusoids). Wherever the function and the analysing function are similiar, they'll multiply and sum to a large coefficient, and wherever they are dissimilar it is the opposite. We can represent the sinusoids as a complex exponential 
+ \begin{equation}
+     X(F) = \int_{-\infty}^\infty x(t) e^{-j 2 \pi Ft}dt
+ \end{equation}
+ With this notation, the result is one complex coefficient per frequency. If you want to use real notation, you'll end up having to calculate two different integrals (one to correlate the signal to the cosine function and the other to correlate the signal with the cosine function). 
+ \begin{gather*}
+     X_a(F) = \int_{-\infty}^\infty x(t) \cos 2 \pi Ft dt \\
+     X_b(F) = \int_{-\infty}^\infty x(t) \sin 2 \pi Ft dt
+ \end{gather*}
+ and the result is that you get two real coefficients per frequency. \\
+ One thing to note is that very often we don't record the function continuously in time, so we end up with a set of discrete point running from $t_0$ to $t_{N-1}$. \\
+ In order to conduct the Fourier transform on a discrete set of samples we have to use the \textbf{Discrete Fourier Transform}, which is only slightyly different from the continuous one. 
+ \begin{equation}
+     X_k = \sum_{n=0}^{N-1} x_n e^{-\frac{j2 \pi kn}{N}}
+ \end{equation}
+where 
+\begin{equation*}
+    \frac{k}{N} \mathrel{\widehat{=}} F\qquad n\mathrel{\widehat{=}} t
+\end{equation*} 
+Now we want to expand the summation in the DFT. 
+\begin{gather*}
+    X_k = \sum_{n=0}^{N-1} x_n e^{- \frac{j 2 \pi k n}{N}} \\
+    \text{we define here} \qquad b_n = \frac{2 \pi k n }{N} \qquad \text{so that we get} \\
+    X_k = x_0 e^{-b_0j} + x_1e^{-b_1j} + ... + x_ne^{-b_{N-1}j} \\
+    \text{where the index k indicates the k-th frequency bin and the index n the n-th sample value} \\
+    \text{using Euler's Formula, we have} \\
+    e^{jx} = \cos x + j \sin x \\
+    X_k = x_0[\cos(-b_0) + j \sin(-b_0)] + ... \\
+    X_k = A_k + B_kj
+\end{gather*}
+
+
+In the discrete domain, we have $\Phi = Cov(\boldsymbol{\epsilon_t})\approx D \Psi D^T$
+From the starting formulation, we now want to try to do a Fourier basis Decomposition of the error term $\epsilon_t(x) \sim N(0, \sigma^2 \Phi)$. \\
+To be able to do so, we have to assume that the $n$ entries of every error vector correspond to equally spaced points in a domain where a "frequency" interpretation makes sense. \\
+Now we can treat $\boldsymbol{\epsilon}_t = \epsilon_t(x_1), ..., \epsilon_t(x_n)$ as a discrete signal and a DFT, then truncating to the top $K$ frequencies desired. \\
+The reconstructed approximation is: 
+\begin{equation}
+    \hat{\boldsymbol{\epsilon}} =   \sum_{k \in S}E_k \phi_k
+\end{equation}
+where $\phi_k$ is the Fourier basis vector corresponding to the frequency $k$, $S$ is the chosen subset of indices and $E_k$ is the Discrete Fourier transform
+\begin{equation}
+    E_k = \sum_{n=0}^N \epsilon_n e^{- 2 \pi i k n /N}, \quad k=0, ..., N-1
+\end{equation}
+The residual is $r = \boldsymbol{\epsilon} - \hat{\boldsymbol{\epsilon}}$.

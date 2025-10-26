@@ -1,0 +1,190 @@
+\subsection{MTMH with non informative prior}
+Apparently, the only way to solve the problem while being able to sample the whole $\Phi$ matrix in one step is to assume a sparse prior, which gives the same probability to all the matrices that are symmetric and positive definite, and to assume that the IW distribution is symmetric (which is not(?)). \\
+Doing that, the algorithm is the same as the previous one, with the only difference that the weights become: 
+\begin{equation}
+    w(\Phi_j^*, \Phi_{t-1}) = L(f_1, ..., f_t|\Phi_j^*) 
+\end{equation}
+
+
+The model, conditional on the first \(p\) lags, is
+\[
+Y \mid A \sim \mathrm{MN}_{k,n}(A Z^\top, \, \sigma^2 \Sigma, \, I_n),
+\]
+where \(\Sigma = C \Phi C^\top\) is the covariance across function coefficients.
+
+---
+
+\subsubsection{Prior}
+
+Assume a matrix-normal prior on \(A\):
+\[
+A \sim \mathrm{MN}_{k,pk}(A_0, \, \sigma^2 \Sigma, \, V_0).
+\]
+The density is
+\[
+p(A) \propto
+\exp\!\left\{
+-\frac{1}{2\sigma^2}
+\mathrm{tr}\!\big(
+\Sigma^{-1} (A - A_0) V_0^{-1} (A - A_0)^\top
+\big)
+\right\}.
+\]
+
+---
+
+\subsubsection{Likelihood}
+
+The likelihood is
+\[
+p(Y \mid A) \propto
+\exp\!\left\{
+-\frac{1}{2\sigma^2}
+\mathrm{tr}\!\big(
+\Sigma^{-1} (Y - A Z^\top)(Y - A Z^\top)^\top
+\big)
+\right\}.
+\]
+
+Expanding the trace:
+\[
+(Y - A Z^\top)(Y - A Z^\top)^\top
+= YY^\top - YZ A^\top - A Z^\top Y^\top + A Z^\top Z A^\top.
+\]
+Therefore,
+\[
+-2\sigma^2 \log p(Y \mid A)
+= \mathrm{tr}(\Sigma^{-1} A Z^\top Z A^\top)
+- 2\, \mathrm{tr}(\Sigma^{-1} A Z^\top Y^\top) + \text{const.}
+\]
+
+---
+
+\subsubsection{Combine prior and likelihood}
+
+From the prior we get
+\[
+-2\sigma^2 \log p(A)
+= \mathrm{tr}(\Sigma^{-1} A V_0^{-1} A^\top)
+- 2\, \mathrm{tr}(\Sigma^{-1} A V_0^{-1} A_0^\top) + \text{const.}
+\]
+
+Summing both terms gives
+\[
+\begin{aligned}
+-2\sigma^2 \log p(A \mid Y)
+&= \mathrm{tr}\!\big( \Sigma^{-1} A (Z^\top Z + V_0^{-1}) A^\top \big) \\
+&\quad - 2\, \mathrm{tr}\!\big( \Sigma^{-1} A (Z^\top Y^\top + V_0^{-1} A_0^\top) \big)
++ \text{const.}
+\end{aligned}
+\]
+
+Define the sufficient statistics:
+\[
+S_{zz} = Z^\top Z, \qquad S_{yz} = Y Z.
+\]
+
+Then,
+\[
+V_n^{-1} = V_0^{-1} + S_{zz}, \qquad
+S = S_{yz} + A_0 V_0^{-1}.
+\]
+
+Hence,
+\[
+-2\sigma^2 \log p(A \mid Y)
+= \mathrm{tr}\!\big(\Sigma^{-1} A V_n^{-1} A^\top\big)
+- 2\, \mathrm{tr}\!\big(\Sigma^{-1} A S^\top\big) + \text{const.}
+\]
+
+---
+
+\subsubsection{Completing the square}
+
+We use the identity
+\[
+\mathrm{tr}\!\big(\Sigma^{-1}(A - A_n)V_n^{-1}(A - A_n)^\top\big)
+= \mathrm{tr}\!\big(\Sigma^{-1}A V_n^{-1}A^\top\big)
+- 2\,\mathrm{tr}\!\big(\Sigma^{-1}A A_n V_n^{-1}\big)
++ \text{const.}
+\]
+Choosing \(A_n\) such that \(A_n V_n^{-1} = S^\top\), i.e.
+\[
+\boxed{
+A_n = S V_n = (Y Z + A_0 V_0^{-1}) V_n,
+}
+\]
+we obtain
+\[
+-2\sigma^2 \log p(A \mid Y)
+= \mathrm{tr}\!\big(\Sigma^{-1}(A - A_n)V_n^{-1}(A - A_n)^\top\big) + \text{const.}
+\]
+
+Therefore, the posterior is again matrix-normal:
+\[
+\boxed{
+A \mid Y, \sigma^2, \Sigma
+\sim
+\mathrm{MN}_{k,pk}(A_n, \, \sigma^2 \Sigma, \, V_n),
+}
+\]
+with
+\[
+\boxed{
+V_n = (V_0^{-1} + Z^\top Z)^{-1}, \qquad
+A_n = (Y Z + A_0 V_0^{-1}) V_n.
+}
+\]
+
+---
+
+\subsubsection{Extracting the individual blocks}
+
+Writing \(A = [A_1 \mid \cdots \mid A_p]\), the marginal of each \(A_r\) is matrix-normal, and the correlations among blocks are encoded in \(V_n\).  
+If \(V_0\) is block-diagonal, \(V_n\) will in general not remain block-diagonal because of the cross-lag correlations in \(Z^\top Z\).
+
+Conditionally, each \(A_r \mid A_{-r}, Y\) is also matrix-normal, with the same form applied to the residuals
+\[
+Y_r = Y - \sum_{s \neq r} A_s Z_s^\top.
+\]
+
+---
+
+\subsubsection{Dimensions (for reference)}
+
+\[
+\begin{array}{ll}
+Y: & k \times n, \\
+Z: & n \times pk, \\
+A: & k \times pk, \\
+V_0, V_n: & pk \times pk, \\
+\Sigma: & k \times k, \\
+S_{yz}: & k \times pk, \\
+S_{zz}: & pk \times pk.
+\end{array}
+\]
+
+\begin{itemize}
+    \item The response $y_t = f_t - \mu_t$ projected in the same space of the $p=1$ case, with row covariance $\Sigma = C \Phi C^T$;
+    \item lagged regressors $z_t = [ \boldsymbol{\gamma}_{t-1}^T, ..., \gamma_{t-p}^T] \in \mathbb{R}^{1\times pk}$;
+    \item concatenated parameters matrix: 
+    \begin{equation}
+        A = [A_1, A_2, ..., A_p] \in \mathbb{R}^{k \times pk}
+    \end{equation}
+\end{itemize}
+
+We stack over time and we get
+\begin{equation}
+    Y = [y_{p+1}, ..., y_T] \in \mathbb{R}^{k \times (T-p)}, \qquad Z =  \left[\begin{matrix}
+        z_{p+1} \\ \vdots \\ z_T
+    \end{matrix} \right] \in \mathbb{R}^{(T-p)\times pk} 
+\end{equation}
+The model becomes
+\begin{equation}
+    Y = AZ^T + E, \qquad E \sim MN_{k, T-p}(0, \sigma^2 \Sigma, I_{T-p})
+\end{equation}
+
+We can out the same prior ad earlier, with
+\begin{equation}
+    A \sim MN_{k, pk}(A_0, V_0, \sigma^2 \Sigma)
+\end{equation}

@@ -1,0 +1,167 @@
+\section{Notes about functional autoregressive model}
+We observe a discrete time collection of functions $\{f_1, ..., f_t\}$, where each function describe a single day patient tremor probability. \\
+$f_t(x)$ describes the behaviour of the $t$-th day as function of $x$.\\
+
+We decompose each function as: 
+\begin{equation}
+    f_t(x) = \mu(x) + g_t(x) + \epsilon_t(x)
+\label{generazione}
+\end{equation}
+where $\mu(x)$ is the main effect, $g_t(x)$ is the autoregressive effect and $\epsilon_t(x)$ is the error term. \\
+The \textbf{main effect} describes the structural effect, ignoring time dependence.\\
+The \textbf{autoregressive effect} describes time dependence. \\
+The \textbf{error term} describes the local error. 
+
+\subsection{Prior and Structural Assumptions}
+Each function is observed a $x_1, .., x_n$, shared over time. At the generic $x_i$ value at time $t$, we have: 
+\begin{itemize}
+    \item $\epsilon_t(x_i) \sim N(0, \sigma^2 \phi_i)$, so that 
+    \begin{equation}
+        \boldsymbol{\epsilon}_t(x) \sim N_n(\textbf{0}, \sigma^2 \Phi) 
+    \end{equation}
+    with
+    \[
+        \Phi =
+        \begin{pmatrix}
+        \phi_1 & 0              & \cdots & 0 \\
+        0              & \phi_2 & \ddots & \vdots \\
+        \vdots         & \ddots          & \ddots & 0 \\
+        0              & \cdots          & 0      &  \phi_n
+        \end{pmatrix}
+        \]
+        
+    \item $\mu(x) = \sum_{j=1}^k \alpha_j b_j(x)$, where $\{b_1(x), ..., b_k(x)\}$ forms a basis system (e.g. splines, Fourier, ...)
+    \item $g_t(x) = \sum_{j=1}^k \gamma_{tj} b_j(x)$, with $\boldsymbol{\gamma}_t = A^T \boldsymbol{\gamma}_{t-1}$
+\end{itemize}
+A priori, we have: 
+\begin{gather}
+    \sigma^2 \sim IG(a_\sigma, b_\sigma) \\
+    \phi_i \sim IG(a_\phi, b_\phi) \\
+    \boldsymbol{\alpha} \sim N_k(\textbf{a}_0, \Sigma_0) \\
+    A | \Phi \sim MN(A_0, V_l, C \Phi C^T)
+\end{gather}
+
+\subsection{Posterior Computations}
+First, note that the likelihood of the function is given by: 
+\begin{equation}
+    L(f_1, ...., f_T | \sigma^2, \Phi, \boldsymbol{\alpha}, A) = \prod_{t=1}^T \prod_{i=1}^n (2 \pi \sigma^2 \phi_i)^{-\frac{1}{2}} \exp \left\{- \frac{1}{2} \frac{\left(f_t(x_i) - \mu(x_i) - g_t(x_i)\right)^2}{\sigma^2 \phi_i} \right\}
+\end{equation}
+
+\subsubsection{Sigma}
+\begin{gather}
+    \pi(\sigma^2 | f_1, ..., f_T ; \Phi, \boldsymbol{\alpha}, A) \propto \pi(\sigma^2) L(f_1, ..., f_T | \sigma^2, \Phi, \boldsymbol{\alpha}, A) \\
+    \propto(\sigma^2)^{- a_\sigma - 1} \exp \left\{-\frac{b_\sigma}{\sigma^2} \right\} \times (\sigma^2)^{-\frac{Tn}{2}} \exp \left\{- \frac{1}{2 \sigma^2} \sum_{t=1}^T \sum_{i=1}^n \frac{(f_t(x_i) - \mu(x_i) - g_t(x_i))^2}{\phi_i} \right\} \\
+    = (\sigma^2)^{-(a_0 - \frac{Tn}{2}) - 1} \exp \left\{ -\frac{1}{\sigma^2} \left[b_\sigma + \frac{1}{2} \sum_{t=1}^T \sum_{i=1}^n \frac{(f_t(x_i) - \mu(x_i) - g_t(x_i))^2}{\phi_i} \right] \right\}
+\end{gather}
+which identifies an Inverse-Gamma distribution with 
+\begin{gather*}
+    \sigma^2 | f_1, ..., f_T; \Phi, \boldsymbol{\alpha}, A \sim IG(a_\sigma^*, b_\sigma^*) \\
+    a_\sigma^* = a_\sigma + \frac{nT}{2} \\
+    b_\sigma^* = b_\sigma + \frac{1}{2} \sum_{t=1}^T \sum_{i=1}^n \frac{(f_t(x_i) - \mu(x_i) - g_t(x_i))^2}{\phi_i}
+\end{gather*}
+
+\subsubsection{Alpha}
+\begin{gather*}
+    \pi(\boldsymbol{\alpha} | f_1, ..., f_T ; \sigma^2, \Phi, A) \propto L(f_1, ..., f_T | \sigma^2, \Phi, \boldsymbol{\alpha}, A) \pi(\boldsymbol{\alpha}) \\
+    \propto \exp \left\{- \frac{1}{2 \sigma^2} \sum_{t=1}^T(\textbf{f}_t - B\boldsymbol{\alpha} + \textbf{g}_t)^T \Phi^{-1}(\textbf{f}_t - B\boldsymbol{\alpha} - \textbf{g}_t)\right\} \times
+    \exp \left \{- \frac{1}{2} (\boldsymbol{\alpha} - \textbf{a}_0)^T \Sigma_0^{-1} (\boldsymbol{\alpha} - \textbf{a}_0)       \right\}
+\end{gather*}
+where 
+\[
+        B =
+        \begin{pmatrix}
+        b_1(x_1) & b_2(x_1)              & \cdots & b_k(x_1) \\
+        b_1(x_2)              & b_2(x_2) & \ddots & \vdots \\
+        \vdots         & \ddots          & \ddots &  \\
+        b_1(x_n)              & \cdots          &      &  b_k(x_n)
+        \end{pmatrix}
+        \]
+and 
+\[
+\textbf{f}_t = 
+\begin{pmatrix}
+    f_t(x_1) \\
+    f_t(x_2) \\
+    \vdots \\
+    f_t(x_n)
+\end{pmatrix}
+\]
+we also define $\textbf{z}_t = (\textbf{f}_t - \textbf{g}_t)$, so we have that the previous equation becomes 
+\begin{gather*}
+    \propto \exp \left \{- \frac{1}{2} \left[\boldsymbol{\alpha} \Sigma_0^{-1}\boldsymbol{\alpha} - 2 \boldsymbol{\alpha}^T \Sigma_0 \textbf{a}_0 - 2 \frac{1}{\sigma^2} \sum_{t=1}^T \boldsymbol{\alpha}^TB^T \Phi \textbf{z}_t - \frac{1}{\sigma^2 } \sum_{t=1}^T \boldsymbol{\alpha}^TB^T \Phi^{-1}B \boldsymbol{\alpha} \right] \right \} \\
+    = \exp \left \{-\frac{1}{2} \left [ \boldsymbol{\alpha}^T \left( \Sigma_0^{-1} + \frac{T}{\sigma^2}B^T \Phi^{-1}B \right)\boldsymbol{\alpha} + 2\boldsymbol{\alpha}^T \left( \Sigma_0^{-1}\textbf{a}_0 + \frac{1}{\sigma^2} \sum_{t=1}^T B^T \Phi^{-1}\textbf{z}_t \right) \right] \right \}
+\end{gather*}
+which identifies a Gaussian distrbution, with
+
+\begin{gather*}
+    \boldsymbol{\alpha} | f_1, ..., f_T; \sigma^2, \Phi, A \sim N_k(\textbf{a}_T, \Sigma_T) \\
+    \Sigma_T = (\Sigma_0^{-1} + \frac{T}{\sigma^2}B^T\Phi^{-1}B)^{-1} \\
+    \textbf{a}_T = \Sigma_T \left[\Sigma_0^{-1}\textbf{a}_0 + \frac{1}{\sigma^2} \sum_{t=1}^T B^T \Phi^{-1}(\textbf{f}_t - \textbf{g}_t) \right]
+\end{gather*}
+
+\subsubsection{A}
+Note that
+\begin{gather*}
+    L(f_1, ..., f_T | \sigma^2, \Phi, \boldsymbol{\alpha}, A) \\
+    \propto \exp \left \{- \frac{1}{2 \sigma^2} \sum_{t=1}^T
+    (\textbf{f}_t - \boldsymbol{\mu} - BA \boldsymbol{\gamma}_{t-1})^T \Phi^{-1}(\textbf{f}_t - \boldsymbol{\mu} - BA \boldsymbol{\gamma}_{t-1}) \right\} \\
+    \text{we define $\textbf{y}_t = (\textbf{f}_t - \boldsymbol{\mu}_t)$} 
+\end{gather*}
+
+\begin{gather*}
+    =\exp \left \{ - \frac{1}{2 \sigma^2} \sum_{t=1}^T (C \textbf{y}_t - A \boldsymbol{\gamma}_{t-1})^T (C \Phi C^T)^{-1}(C\textbf{y}_t - A \boldsymbol{\gamma}_{t-1}) \right\} \\
+    \text{with }C = (B^TB)^{-1}B^T \\
+    \propto \exp \left \{- \frac{1}{2 \sigma^2} \left [(C \Phi C^T)^{-1} (\textbf{Y} - \boldsymbol{\Gamma}A)^T(\textbf{Y} - \boldsymbol{\Gamma}A) \right]   \right\}
+\end{gather*}
+We define here 
+\[
+\textbf{Y} = 
+\begin{pmatrix}
+    \textbf{y}_1^T \\
+    \textbf{y}_2^T \\
+    \vdots \\
+    \textbf{y}_T^T
+\end{pmatrix}
+\]
+and
+\[
+\boldsymbol{\Gamma} = 
+\begin{pmatrix}
+    \boldsymbol{\gamma}_0^T \\
+    \boldsymbol{\gamma}_1^T \\
+    \vdots \\
+    \boldsymbol{\gamma}_{T-1}^T
+\end{pmatrix}
+\]
+\begin{gather*}
+    = \exp \left \{ - \frac{1}{2 \sigma^2} tr \left [(C\Phi C^T)^{-1}(YC^T- \Gamma \hat{A})^T(YC^T- \Gamma \hat{A}) \right] \right \} \times \exp \left \{- \frac{1}{2 \sigma^2}tr[(C\Phi C^T)^{-1}(A-\hat{A})^T \Gamma ^T \Gamma(A - \hat{A})] \right \} \\
+    \text{then we have} \\
+    \pi(A | f_1, ..., f_T; \sigma^2, \Phi, \boldsymbol{\alpha}) \\
+    \propto \exp \left \{- \frac{1}{2} tr[(C \Phi C^T)^{-1}(A - \hat{A})^T \Gamma ^T \Gamma (A- \hat{A)}]    \right \} \times \exp \left \{- \frac{1}{2} tr[(C \Phi C^T)^{-1}(A - A_0)^T V_0 (A- A_0)]    \right \} \\
+    = \exp \left \{ - \frac{1}{2}tr [ (C\Phi C^T)^{-1}(A- A_T)^T V_T^{-1}(A-A_T)]   \right\}
+\end{gather*}
+Which identifies a matrix normal
+\begin{gather*}
+    A | \sigma^2, \Phi, \boldsymbol{\alpha} \sim MN_{k \times k}(A_T, V_T, C \Phi C^T) \\
+    V_T = \left(V_0^{-1} + \frac{\Gamma^T\Gamma}{\sigma^2} \right) ^{-1}\\
+    A_T = V_T \left(V_0^{-1}A_0 + \frac{\Gamma ^T Y C^T}{\sigma^2} \right)
+\end{gather*}
+
+\subsubsection{Phi}
+We assume at first that every $\phi$ coefficient is indipendent from all the others and shares the same prior distribution as all the others. These assumptions lead to the prior $\phi_i \sim IG(a_\phi, b_\phi)$. \\
+It also holds then that: 
+\begin{equation}
+    \pi(\Phi) = \prod_{i=1}^n \pi(\phi_i)
+\end{equation}
+A posteriori, we have: 
+\begin{gather*}
+    \pi(\phi_i | f_1, ..., f_T;  \sigma^2, \boldsymbol{\alpha}, A) \propto \pi(\phi_i)L(f_1, ..., f_T | \sigma^2, \Phi, \alpha, A) \\
+    \propto (\phi_i)^{- \alpha_\phi - 1} \exp{\left \{ -\frac{b_\phi}{\phi_i} \right \}} \phi^{- \frac{T}{2}} \exp \left \{- \frac{1}{2 \phi_i} \sum_{t=1}^T \frac{(f_t(x_i) - g_t(x_i) - \mu(x_i))^2}{\sigma^2} \right\} \\
+    (\phi_i)^{- {-(a_\phi + \frac{T}{2}) - 1}} \exp \left \{- \frac{1}{\phi_i} \left[a_\phi + \frac{1}{2} \sum_{t=1}^T \frac{(f_t(x_i) - g_t(x_i) - \mu(x_i))^2}{\sigma^2} \right] \right \}
+\end{gather*}
+which identifies an Inverse-Gamma distribution with 
+\begin{gather*}
+    \phi_i | \sigma^2, \boldsymbol{\alpha}, A \sim IG(a_\phi^*, b_\phi^*) \\
+    a_\phi^* = a_\phi + \frac{T}{2} \\
+    b_\phi^* = b_\phi + \frac{1}{2} \sum_{t=1}^T \frac{(f_t(x_i) - g_t(x_i) - \mu(x_i))^2}{\sigma^2}
+\end{gather*}
