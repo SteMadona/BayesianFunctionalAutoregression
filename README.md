@@ -1,4 +1,4 @@
-# BayesianFunctionalAutoregression
+# Bayesian Functional Autoregression
 This repository contains the code and materials developed for my thesis on Bayesian modelling for autoregressive functional data
 ## Introduction
 Presentation of the problem and actual state-of-the-art solutions. Discussion on the advantages of adopting a Bayesian framework in this context. 
