@@ -177,5 +177,26 @@ View(out_psi_mtmh$Phi[, ,800])
 
 saveRDS(out_psi_mtmh, file = "results/out_psi_mtmh.rds")
 
-
 out_prova <- readRDS("results/out_psi_mtmh.rds")
+
+
+#PSI with MTMH and mulitple orders
+
+tic()
+out_psi_mtmh_p <- GS_mtmh_p(df = df_test1, 
+                            a0 = 2, 
+                            b0 = 1, 
+                            avec0 = test1, 
+                            Sigma0 = diag(12), 
+                            V0 = diag(12), 
+                            Aprior = test3, 
+                            p = 10, 
+                            R = 10,
+                            burnin = 0,
+                            nbasis = 5,
+                            nu0 = 12, 
+                            S0 = diag(10), 
+                            m = 10
+)
+toc()
+
