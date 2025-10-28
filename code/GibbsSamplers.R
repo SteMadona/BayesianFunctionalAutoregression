@@ -251,7 +251,7 @@ GS_mtmh_p <- function(df, #functional data
                       Sigma0,  #var/cov for alpha prior
                       V0, #column variance for A prior
                       Aprior, #mean for A prior
-                      p, #number of autoregressive matrices
+                      p, #number of autoregressive orders
                       R, #number of iterations
                       burnin, #burnin lenght
                       nbasis, #number of basis to decompose error component 
@@ -267,7 +267,7 @@ GS_mtmh_p <- function(df, #functional data
   k <- length(avec0)
   n_acc <- 0
   
-  #B and C matrix, fixed matrices
+  #B and C, fixed matrices
   B <- bs(x, df = length(avec0), degree = 3)
   C <- solve(crossprod(B)) %*% t(B)
   D <- make_fourier(x, nbasis)

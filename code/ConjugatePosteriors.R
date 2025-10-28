@@ -56,39 +56,34 @@ sample_A <- function(fs, Phi, V0, A0, sigma, Gamma0, C, mus, k, T){
 }
 
 sample_A_multi <- function(fs, Phi, V0, Aprior, sigma, Gamma, C, mus, k, T, A_all, lag){
-  stopifnot(lag >= 1, lag < T)         # serve almeno un'osservazione dopo il lag
+  stopifnot(lag >= 1, lag < T)         # at least one obs after the lag
   stopifnot(ncol(Gamma) == k)
   
-  # 1) Residui togliendo gli altri lag
-  Y <- fs - mus  # n x T
+  Y <- fs - mus  
   
   p <- dim(A_all)[3]
   for (t in (lag+1):T) {
     temp <- 0
     for (j in 1:p) {
       if (j != lag && (t-j) > 0) {
-        # usa t(C) (n x k) * A_j (k x k) * Gamma[t-j,] (k)
         temp <- temp + t(C) %*% A_all[, , j] %*% Gamma[t - j, ]
       }
     }
     Y[, t] <- Y[, t] - temp
   }
+  #removes the contribution of all other autoregressive lags
   
-  # 2) Dati per il blocco di regressione del lag 'lag'
-  Y_t <- t(Y[, (lag+1):T])          # (T-lag) x n
-  Gamma_tlag <- Gamma[1:(T-lag), ]  # (T-lag) x k
+  Y_t <- t(Y[, (lag+1):T])          
+  Gamma_tlag <- Gamma[1:(T-lag), ]  
   
-  # 3) Posterior MN: V_post (col) e M_post
-  #    Gamma2 = Γ'Γ è k x k, ok per la parte di precisione
-  Gamma2 <- crossprod(Gamma_tlag)   # = t(Gamma_tlag) %*% Gamma_tlag, k x k
+  Gamma2 <- crossprod(Gamma_tlag)   
   Gamma2 <- make_posdef(Gamma2) + diag(1e-6, k)
   
-  Gamma2 <- crossprod(Gamma_tlag)
   M  <- solve(V0) + (1 / sigma) * Gamma2
   VT <- tryCatch(chol2inv(chol(M)), error = function(e) MASS::ginv(M))
   VT <- make_posdef(VT) + diag(1e-6, k)
   
-  AT <- VT %*% (solve(V0) %*% Aprior + (1 / sigma) * (t(Gamma_tlag) %*% Y_t %*% t(C))) # k x k
+  AT <- VT %*% (solve(V0) %*% Aprior + (1 / sigma) * (t(Gamma_tlag) %*% Y_t %*% t(C))) 
   
   U <- C %*% Phi %*% t(C)
   U <- make_posdef(U) + diag(1e-6, k)
