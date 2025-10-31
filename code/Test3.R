@@ -1,3 +1,19 @@
+library(splines)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(mvtnorm)
+library(matrixNormal)
+library(Matrix)
+library(MASS)
+library(MCMCpack)
+library(tictoc)
+
+source("code/UsefulFunctions.R")
+source("code/ConjugatePosteriors.R")
+source("code/GibbsSamplers.R")
+source("code/MHforPsi.R")
+
 simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
                                            alpha, Phi, A_list, k) {
   B <- bs(x, df = nbasis, degree = 3)

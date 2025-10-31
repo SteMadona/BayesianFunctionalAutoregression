@@ -384,7 +384,8 @@ GS_mtmh_p <- function(df, #functional data
     Phi = Phi[, , -c(1:burnin)],
     a = atest[-c(1:burnin)],
     b = btest[-c(1:burnin)],
-    n_acc = n_acc
+    n_acc = n_acc, 
+    accept_vec = accept_vec
   )
   return(out)
   

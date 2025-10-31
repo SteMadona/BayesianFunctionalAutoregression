@@ -1,3 +1,14 @@
+library(splines)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(mvtnorm)
+library(matrixNormal)
+library(Matrix)
+library(MASS)
+library(MCMCpack)
+library(tictoc)
+
 source("code/UsefulFunctions.R")
 source("code/ConjugatePosteriors.R")
 source("code/GibbsSamplers.R")
@@ -47,9 +58,10 @@ test2 <-  matrix(rnorm(10*12), 10, 12)  #Gamma0 matrix
 test3 <- matrix(rnorm(12*12), 12, 12) + diag(0.5, 12)   #A0 matrix
 
 
-alpha_test1 <- c(-2, 0.5, 1, 0, 1.5, -1, 0, 1.5, -1.5, -1, 1, 0)
+alpha_test2 <- c(-2, 0.5, 1, 0, 1.5, -1, 0, 1.5, -1.5, -1, 1, 0)
 Phi_test2 <- riwish(205, diag(200))
-df_test2 <- simulation_test2(x, 100, 12, 0.1, alpha_test1, Phi_test2, test3, 12)
+A_test2 <- matrix(rnorm(12*12), 12, 12) + diag(0.5, 12)
+df_test2 <- simulation_test2(x, 50, 12, 0.1, alpha_test2, Phi_test2, A_test2, 12)
 
 
 # PSI with MTMH and p=1 --------------------------------------------------------
@@ -71,3 +83,22 @@ out_psi_mtmh <- GibbsSampler_mtmh(df = df_test2,
 )
 toc()
 
+#58855 second elapsed
+
+sigma_trace <- as.mcmc(out_psi_mtmh$sigma)
+out_psi_mtmh$n_acc  
+traceplot(log(sigma_trace))
+
+alpha_trace_phi_mh <- mcmc(t(out_psi_mtmh$alpha))
+
+View(apply(out_psi_mtmh$A, c(1, 2), mean))
+View(A_test2)
+
+image(apply(out_psi_mtmh$Phi, c(1, 2), mean), 
+      col = gray(seq(1, 0, length = 256)))
+image(Phi_test2, col = gray(seq(1, 0, length = 256)))
+
+View(out_psi_mtmh$Phi[, , 150])
+apply(out_psi_mtmh$alpha, 1, mean)
+
+out_psi_mtmh$n_acc
