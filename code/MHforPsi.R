@@ -54,52 +54,89 @@ sample_Phi_fourier_mh <- function(fs, mus, gs, sigma, D, Psi, Phi, nu0, S0, n, n
               n_acc = n_acc))
 }
 
-sample_Phi_fourier_mtmh <- function(fs, mus, gs, sigma, D, Psi, nu0, S0, n, m, n_acc){
-  # bersaglio: usare SOLO la likelihood (q = prior indipendente)
-  log_target <- function(Psi){
-    Psi <- make_posdef(Psi)
-    as.numeric(loglik(fs, mus, gs, sigma, D, Psi))  # <-- solo ll
+
+rw_step_chol <- function(Psi, rw_scale = 0.05){
+  L <- chol(make_posdef(Psi))
+  L <- t(L)
+  
+  eps <- matrix(rnorm(length(L), mean = 0, sd = rw_scale), nrow = nrow(L))
+  eps[upper.tri(eps)] <- 0
+  
+  L_star <- L + eps
+  
+  Psi_star <- make_posdef(L_star %*% t(L_star))
+  
+  return(Psi_star)
+}
+
+sample_Phi_fourier_mtmh <- function(fs, mus, gs, sigma, D, Psi, nu0, S0, 
+                                    m, n_acc, 
+                                    nu_q = NULL, s = 1.0, rw_prob = 0.3, rw_scale = 0.05) {
+  
+  #Hybrid MTMH for Psi:
+  # - with prob (1 - rw_prob): Multiple-Try MH using independence IW(nu_q, s*Psi_current)
+  # - with prob rw_prob: single symmetric RW step on Cholesky with scale = rw_scale
+  
+  p <- nrow(Psi)
+  if (is.null(nu_q)) {
+    nu_q <- p + 4
   }
   
-  ## m proposte forward
-  Psi_prop_list <- vector("list", m)
-  Phi_prop_list <- vector("list", m)
-  logw_f_raw <- numeric(m)
-  
-  for (i in 1:m) {
-    Psi_prop_i <- make_posdef(riwish(nu0, S0))
-    Phi_prop_i <- make_posdef(D %*% Psi_prop_i %*% t(D))
-    Psi_prop_list[[i]] <- Psi_prop_i
-    Phi_prop_list[[i]] <- Phi_prop_i
-    logw_f_raw[i] <- log_target(Psi_prop_i)   # log-pesi GREZZI
+  if (runif(1) < rw_prob) {
+    # --- Symmetric RW branch (no proposal terms in acceptance) ---
+    Psi_star <- rw_step_chol(Psi, rw_scale = rw_scale)
+    log_alpha <- (loglik(fs, mus, gs, sigma, D, Psi_star) + log_diwish(Psi_star, nu0, S0)) -
+                 (loglik(fs, mus, gs, sigma, D, Psi)      + log_diwish(Psi,      nu0, S0))
+    if (runif(1) < min(1, exp(log_alpha))) {
+      return(list(
+        Phi = add_nugget(D %*% Psi_star %*% t(D), rel = 1e-2),
+        Psi = Psi_star,
+        n_acc = n_acc + 1L,
+        acc = 1
+      ))
+    } else {
+      return(list(
+        Phi = add_nugget(D %*% Psi %*% t(D), rel = 1e-2),
+        Psi = Psi,
+        n_acc = n_acc,
+        acc = 0
+      ))
+    }
   }
   
-  # scelta dell'indice con softmax dei log-pesi grezzi
-  idx_star <- sample.int(m, 1, prob = softmax_from_logs(logw_f_raw))
-  Psi_star <- Psi_prop_list[[idx_star]]
-  Phi_star <- Phi_prop_list[[idx_star]]
+  # --- Independence MTMH branch ---
+  S_q <- s * make_posdef(Psi)
   
-  ## m-1 backward + stato corrente come m-esimo
-  Psi_back_list <- vector("list", m)
-  Phi_back_list <- vector("list", m)
-  for (i in 1:(m-1)) {
-    Psi_back_list[[i]] <- make_posdef(riwish(nu0, S0))
-    Phi_back_list[[i]] <- make_posdef(D %*% Psi_back_list[[i]] %*% t(D))
+  log_target <- function(P) {
+    loglik(fs, mus, gs, sigma, D, P) + log_diwish(P, nu0, S0)
   }
-  Psi_back_list[[m]] <- Psi
-  Phi_back_list[[m]] <- make_posdef(D %*% Psi %*% t(D))
   
-  logw_b_raw <- vapply(Psi_back_list, log_target, numeric(1))
+  # forward proposals and weights target/proposal
+  Psi_list <- replicate(m, make_posdef(riwish(nu_q, S_q)), simplify = FALSE)
+  logw_f <- sapply(Psi_list, function(P) log_target(P) - log_diwish(P, nu_q, S_q))
   
-  # log-sum-exp CORRETTO e rapporto FORWARD/BACKWARD
-  log_den <- logsumexp(logw_f_raw)  # forward
-  log_num <- logsumexp(logw_b_raw)  # backward
-  log_alpha <- log_den - log_num     # <-- forward - backward
+  idx <- sample.int(m, 1, prob = exp(logw_f - max(logw_f)))
+  Psi_star <- Psi_list[[idx]]
+  
+  # backward set: m-1 fresh from q + current
+  Psi_back <- c(replicate(m - 1, make_posdef(riwish(nu_q, S_q)), simplify = FALSE), list(Psi))
+  logw_b <- sapply(Psi_back, function(P) log_target(P) - log_diwish(P, nu_q, S_q))
+  
+  log_alpha <- logsumexp(logw_f) - logsumexp(logw_b)
   alpha <- min(1, exp(log_alpha))
   
   if (runif(1) < alpha) {
-    list(Phi = Phi_star, Psi = Psi_star, n_acc = n_acc + 1L, acc = 1)
+    list(Phi = add_nugget(D %*% Psi_star %*% t(D), rel = 1e-2),
+         Psi = Psi_star,
+         n_acc = n_acc + 1L,
+         acc = 1)
   } else {
-    list(Phi = make_posdef(D %*% Psi %*% t(D)), Psi = Psi, n_acc = n_acc, acc = 0)
+    list(Phi = add_nugget(D %*% Psi %*% t(D), rel = 1e-2),
+         Psi = Psi,
+         n_acc = n_acc,
+         acc = 0)
   }
 }
+
+
+

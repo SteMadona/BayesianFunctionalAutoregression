@@ -164,7 +164,7 @@ GibbsSampler_mtmh <- function(df, #functional data
   alpha0 <- solve(BtB, Bty)
   
   A0 <- rmatnorm(1, Aprior, V0, C%*%Phi0%*%t(C))    
-  AO <- make_stable_from_A(A0)
+  A0 <- make_stable_from_A(A0)
   
   gamma0 <- rnorm(k, 0, 1)
   Gamma0 <- matrix(0, T, k)
@@ -223,7 +223,7 @@ GibbsSampler_mtmh <- function(df, #functional data
     A_draw <- sample_A(fs, Phi[, , i-1], V0, A0, sigma[i], Gamma[, , i], C, mus, k, T) 
     A[, , i] <- as.matrix(make_stable_from_A(A_draw))
     out_Phi <- sample_Phi_fourier_mtmh(fs, mus, gs, sigma[i], D, Psi[, ,i-1], 
-                                       nu0, S0, n, m, n_acc)
+                                       nu0, S0, m, n_acc)
     Phi[, , i] <- out_Phi$Phi
     Psi[, , i] <- out_Phi$Psi
     n_acc <- out_Phi$n_acc
@@ -370,7 +370,7 @@ GS_mtmh_p <- function(df, #functional data
     }
     
     out_Phi <- sample_Phi_fourier_mtmh(fs, mus, gs, sigma[i], D, Psi[, ,i-1], 
-                                       nu0, S0, n, m, n_acc)
+                                       nu0, S0, m, n_acc)
     Phi[, , i] <- out_Phi$Phi
     Psi[, , i] <- out_Phi$Psi
     n_acc <- out_Phi$n_acc

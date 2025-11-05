@@ -66,3 +66,11 @@ make_fourier <- function(x, K) {
   }
   return(B) # m x (2K)
 }
+
+add_nugget <- function(Phi, rel = 0.1){
+  n <- nrow(Phi)
+  Phi <- make_posdef(Phi)
+  tau <- rel * (sum(diag(Phi)) / n)
+  Phi <- Phi + diag(tau, n)
+  Phi / mean(diag(Phi))   # normalize scale
+}

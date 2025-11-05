@@ -15,7 +15,6 @@ source("code/GibbsSamplers.R")
 source("code/MHforPsi.R")
 
 
-
 simulation_test2 <- function(x, n_fun, nbasis, noise_sd = 0.5, alpha, Phi, A, k){
   # spline basis
   B <- bs(x, df = nbasis, degree = 3)
@@ -74,23 +73,23 @@ out_psi_mtmh <- GibbsSampler_mtmh(df = df_test2,
                                   Sigma0 = diag(12), 
                                   V0 = diag(12), 
                                   Aprior = test3, 
-                                  R = 200,
-                                  burnin = 50,
+                                  R = 20,
+                                  burnin = 0,
                                   nbasis = 5,
-                                  nu0 = 12, 
+                                  nu0 = 14, 
                                   S0 = diag(10), 
-                                  m = 2000
+                                  m = 50
 )
 toc()
 
-#58855 second elapsed
 
 sigma_trace <- as.mcmc(out_psi_mtmh$sigma)
 out_psi_mtmh$n_acc  
 traceplot(log(sigma_trace))
+summary(sigma_trace)
 
 alpha_trace_phi_mh <- mcmc(t(out_psi_mtmh$alpha))
-
+out_psi_mtmh$Gamma[ , ,1]
 View(apply(out_psi_mtmh$A, c(1, 2), mean))
 View(A_test2)
 
@@ -101,4 +100,3 @@ image(Phi_test2, col = gray(seq(1, 0, length = 256)))
 View(out_psi_mtmh$Phi[, , 150])
 apply(out_psi_mtmh$alpha, 1, mean)
 
-out_psi_mtmh$n_acc
