@@ -19,6 +19,8 @@ simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
   B <- bs(x, df = nbasis, degree = 3)
   C <- solve(crossprod(B)) %*% t(B)
   
+  A_list <- make_stable_from_A_list(A_list)
+  
   n <- length(x)
   mu <- as.vector(B %*% alpha)
   Phi <- make_posdef(Phi)
@@ -81,7 +83,7 @@ df_test3 <- simulation_test_VARp_selective(x, n_fun = 100, nbasis = 12,
 #PSI with MTMH and mulitple orders --------------------------------------------
 
 tic()
-out_psi_mtmh_p <- GS_mtmh_p(df = df_test1, 
+out_psi_mtmh_p <- GS_mtmh_p(df = df_test3, 
                             a0 = 2, 
                             b0 = 1, 
                             avec0 = test1, 
@@ -89,7 +91,7 @@ out_psi_mtmh_p <- GS_mtmh_p(df = df_test1,
                             V0 = diag(12), 
                             Aprior = test3, 
                             p = 10, 
-                            R = 10,
+                            R = 20,
                             burnin = 0,
                             nbasis = 5,
                             nu0 = 12, 
@@ -97,3 +99,8 @@ out_psi_mtmh_p <- GS_mtmh_p(df = df_test1,
                             m = 10
 )
 toc()
+
+out_psi_mtmh_p$sigma
+out_psi_mtmh_p$b
+out_psi_mtmh_p$Gamma[ , , 1]
+

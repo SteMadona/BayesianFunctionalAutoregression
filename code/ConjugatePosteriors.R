@@ -13,7 +13,7 @@ sample_sigma <- function(fs, a0, b0, Phi, T, n, mus, gs){
   list(sigma = rinvgamma(1, shape = asigma, scale = bsigma), a = asigma, b = bsigma)
 }
 
-sample_alpha <- function(fs, avec0, Sigma0, Phi, sigma, A, k, T, n, B, Gamma){
+sample_alpha <- function(fs, avec0, Sigma0, Phi, sigma, k, T, n, B, Gamma){
   
   Gamma <- as.matrix(Gamma)
   Phi_pd <- add_nugget(Phi)

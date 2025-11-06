@@ -90,7 +90,7 @@ GibbsSampler_mh <- function(df, #functional data
     atest[i] <- outsigma$a
     btest[i] <- outsigma$b
     
-    alpha[, i] <- sample_alpha(fs, avec0, Sigma0, Phi[, ,i-1], sigma[i], A[, , i-1], k, T, n, B, Gamma[, , i-1])
+    alpha[, i] <- sample_alpha(fs, avec0, Sigma0, Phi[, ,i-1], sigma[i], k, T, n, B, Gamma[, , i-1])
     
     Gamma[1, , i] <- rnorm(k, 0, 1)
     for(t in 2:T){
@@ -214,7 +214,7 @@ GibbsSampler_mtmh <- function(df, #functional data
     atest[i] <- outsigma$a
     btest[i] <- outsigma$b
     
-    alpha[, i] <- sample_alpha(fs, avec0, Sigma0, Phi[, ,i-1], sigma[i], A[, , i-1], k, T, n, B, Gamma[, , i-1])
+    alpha[, i] <- sample_alpha(fs, avec0, Sigma0, Phi[, ,i-1], sigma[i], k, T, n, B, Gamma[, , i-1])
     
     Gamma[1, , i] <- rnorm(k, 0, 1)
     for(t in 2:T){
@@ -237,7 +237,8 @@ GibbsSampler_mtmh <- function(df, #functional data
     Phi = Phi[, , -c(1:burnin)],
     a = atest[-c(1:burnin)], 
     b = btest[-c(1:burnin)], 
-    n_acc = n_acc
+    n_acc = n_acc, 
+    accept_vec = accept_vec
   )
   return(out)
   
@@ -289,7 +290,7 @@ GS_mtmh_p <- function(df, #functional data
   alpha0 <- solve(BtB, Bty)
   
   A0 <- rmatnorm(p, Aprior, V0, C%*%Phi0%*%t(C))    
-  AO <- make_stable_from_A(A0)
+  A0 <- make_stable_from_A(A0)
   
   gamma0 <- rnorm(k, 0, 1)
   Gamma0 <- matrix(0, T, k)
@@ -315,8 +316,12 @@ GS_mtmh_p <- function(df, #functional data
   alpha[, 1] <- alpha0
   for (r in 1:p) {
     A0 <- rmatnorm(1, Aprior, V0, C %*% Phi0 %*% t(C))
-    A[, , r, 1] <- make_stable_from_A(A0)
+    A[, , r, 1] <- A0
   }
+  A0_list <- lapply(1:p, function(r) A[, , r, 1])
+  A0_list <- make_stable_from_A_list(A0_list)
+  for (r in 1:p) A[, , r, 1] <- A0_list[[r]]
+  
   Phi[, , 1] <- Phi0
   Psi[, , 1] <- Psi0
   Gamma0 <- matrix(0, T, k)
@@ -352,9 +357,9 @@ GS_mtmh_p <- function(df, #functional data
     atest[i] <- outsigma$a
     btest[i] <- outsigma$b
     
-    alpha[, i] <- sample_alpha(fs, avec0, Sigma0, Phi[, ,i-1], sigma[i], A[, , i-1], k, T, n, B, Gamma[, , i-1])
+    alpha[, i] <- sample_alpha(fs, avec0, Sigma0, Phi[, ,i-1], sigma[i], k, T, n, B, Gamma[, , i-1])
     
-    Gamma[1:p, , i] <- matrix(rnorm(k * p), nrow = p, ncol = k)
+    Gamma[1:p, , i] <- Gamma[1:p, ,i-1]
     for (t in (p+1):T) {
       Gamma[t, , i] <- 0
       for (r in 1:p) {
@@ -366,8 +371,12 @@ GS_mtmh_p <- function(df, #functional data
       A_draw <- sample_A_multi(fs, Phi[, , i-1], V0, Aprior, sigma[i],
                                Gamma[, , i], C, mus, k, T,
                                A[, , , i-1], lag = r)
-      A[, , r, i] <- make_stable_from_A(A_draw)
+      A[, , r, i] <- A_draw
     }
+    
+    A_list <- lapply(1:p, function(r) A[, , r, i])
+    A_list <- make_stable_from_A_list(A_list)
+    for (r in 1:p) A[, , r, i] <- A_list[[r]]
     
     out_Phi <- sample_Phi_fourier_mtmh(fs, mus, gs, sigma[i], D, Psi[, ,i-1], 
                                        nu0, S0, m, n_acc)

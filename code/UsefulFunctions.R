@@ -24,6 +24,40 @@ make_stable_from_A <- function(A, target_rho = 0.95){
   return(A_stable)
 }
 
+make_stable_from_A_list <- function(A_list, target_rho = 0.95) {
+  # Filtra i NULL sostituendoli con matrici nulle della giusta dimensione
+  p <- length(A_list)
+  k <- NULL
+  for (A in A_list) {
+    if (!is.null(A)) { k <- nrow(A); break }
+  }
+  if (is.null(k)) stop("All A matrices are NULL — cannot determine dimension.")
+  
+  A_list <- lapply(A_list, function(A) if (is.null(A)) matrix(0, k, k) else A)
+  
+  # Costruisci la companion matrix
+  companion <- matrix(0, nrow = k * p, ncol = k * p)
+  companion[1:k, ] <- do.call(cbind, A_list)
+  if (p > 1) {
+    companion[(k+1):(k*p), 1:(k*(p-1))] <- diag(k*(p-1))
+  }
+  
+  # Calcola il raggio spettrale
+  ev <- eigen(companion, only.values = TRUE)$values
+  rho <- max(abs(ev))
+  
+  # Se già stabile, ritorna invariato
+  if (rho <= target_rho) return(A_list)
+  
+  # Scala tutte le matrici per stabilizzare
+  scale_factor <- target_rho / rho
+  A_list_stable <- lapply(A_list, function(A) A * scale_factor)
+  
+  return(A_list_stable)
+}
+
+
+
 logdet_spd <- function(M){
   d <- determinant(M, logarithm = TRUE)
   as.numeric(d$modulus)  # assume SPD; sign should be +1
