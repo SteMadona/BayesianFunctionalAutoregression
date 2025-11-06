@@ -14,6 +14,19 @@ source("code/ConjugatePosteriors.R")
 source("code/GibbsSamplers.R")
 source("code/MHforPsi.R")
 
+set.seed(100)
+
+x <- seq(0, 1, length.out = 200)
+
+test1 <- rnorm(12, 0, 1) #alpha0 vector
+test2 <-  matrix(rnorm(10*12), 10, 12)  #Gamma0 matrix
+test3 <- matrix(rnorm(12*12), 12, 12) + diag(0.5, 12)   #A0 matrix
+
+
+alpha_test2 <- c(-2, 0.5, 1, 0, 1.5, -1, 0, 1.5, -1.5, -1, 1, 0)
+Phi_test2 <- riwish(205, diag(200))
+A_test2 <- matrix(rnorm(12*12), 12, 12) + diag(0.5, 12)
+
 simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
                                            alpha, Phi, A_list, k) {
   B <- bs(x, df = nbasis, degree = 3)
@@ -72,7 +85,7 @@ A_list[[2]] <- -0.3 * diag(k)
 A_list[[7]] <- 0.2 * matrix(runif(k * k, -0.1, 0.1), k, k)
 
 
-df_test3 <- simulation_test_VARp_selective(x, n_fun = 100, nbasis = 12,
+df_test3 <- simulation_test_VARp_selective(x, n_fun = 20, nbasis = 12,
                                            noise_sd = 0.1,
                                            alpha = alpha_test1,
                                            Phi = Phi_test1,
@@ -91,7 +104,7 @@ out_psi_mtmh_p <- GS_mtmh_p(df = df_test3,
                             V0 = diag(12), 
                             Aprior = test3, 
                             p = 10, 
-                            R = 20,
+                            R = 10,
                             burnin = 0,
                             nbasis = 5,
                             nu0 = 12, 
@@ -103,4 +116,7 @@ toc()
 out_psi_mtmh_p$sigma
 out_psi_mtmh_p$b
 out_psi_mtmh_p$Gamma[ , , 1]
+out_psi_mtmh_p$A
 
+
+View(out_psi_mtmh_p$Gamma[, , 1])

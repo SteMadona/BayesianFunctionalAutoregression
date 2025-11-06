@@ -289,17 +289,6 @@ GS_mtmh_p <- function(df, #functional data
   
   alpha0 <- solve(BtB, Bty)
   
-  A0 <- rmatnorm(p, Aprior, V0, C%*%Phi0%*%t(C))    
-  A0 <- make_stable_from_A(A0)
-  
-  gamma0 <- rnorm(k, 0, 1)
-  Gamma0 <- matrix(0, T, k)
-  Gamma0[1,] <- gamma0
-  
-  for(t in 2:T){
-    Gamma0[t, ] <- t(A0) %*% Gamma0[t-1, ]
-  }
-  
   #Chains creation 
   sigma <- numeric(R)
   atest <- numeric(R)
@@ -325,7 +314,7 @@ GS_mtmh_p <- function(df, #functional data
   Phi[, , 1] <- Phi0
   Psi[, , 1] <- Psi0
   Gamma0 <- matrix(0, T, k)
-  Gamma0[1:p, ] <- matrix(rnorm(k * p), nrow = p, ncol = k)
+  Gamma0[1:p, ] <- matrix(rnorm(k * p, 0, 0.05), nrow = p, ncol = k)
   
   for (t in (p+1):T) {
     Gamma0[t, ] <- 0
@@ -359,17 +348,10 @@ GS_mtmh_p <- function(df, #functional data
     
     alpha[, i] <- sample_alpha(fs, avec0, Sigma0, Phi[, ,i-1], sigma[i], k, T, n, B, Gamma[, , i-1])
     
-    Gamma[1:p, , i] <- Gamma[1:p, ,i-1]
-    for (t in (p+1):T) {
-      Gamma[t, , i] <- 0
-      for (r in 1:p) {
-        Gamma[t, , i] <- Gamma[t, , i] + t(A[, , r, i-1]) %*% Gamma[t - r, , i]
-      }
-    }
     
     for (r in 1:p) {
       A_draw <- sample_A_multi(fs, Phi[, , i-1], V0, Aprior, sigma[i],
-                               Gamma[, , i], C, mus, k, T,
+                               Gamma[, , i-1], C, mus, k, T,
                                A[, , , i-1], lag = r)
       A[, , r, i] <- A_draw
     }
@@ -377,6 +359,14 @@ GS_mtmh_p <- function(df, #functional data
     A_list <- lapply(1:p, function(r) A[, , r, i])
     A_list <- make_stable_from_A_list(A_list)
     for (r in 1:p) A[, , r, i] <- A_list[[r]]
+    
+    Gamma[1:p, , i] <- Gamma[1:p, ,i-1]
+    for (t in (p+1):T) {
+      Gamma[t, , i] <- 0
+      for (r in 1:p) {
+        Gamma[t, , i] <- Gamma[t, , i] + t(A[, , r, i]) %*% Gamma[t - r, , i]
+      }
+    }
     
     out_Phi <- sample_Phi_fourier_mtmh(fs, mus, gs, sigma[i], D, Psi[, ,i-1], 
                                        nu0, S0, m, n_acc)
