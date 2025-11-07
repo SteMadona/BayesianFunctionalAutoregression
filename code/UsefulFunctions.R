@@ -24,6 +24,7 @@ make_stable_from_A <- function(A, target_rho = 0.95){
   return(A_stable)
 }
 
+
 make_stable_from_A_list <- function(A_list, target_rho = 0.95) {
   # Filtra i NULL sostituendoli con matrici nulle della giusta dimensione
   p <- length(A_list)

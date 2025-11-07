@@ -314,12 +314,16 @@ GS_mtmh_p <- function(df, #functional data
   Phi[, , 1] <- Phi0
   Psi[, , 1] <- Psi0
   Gamma0 <- matrix(0, T, k)
-  Gamma0[1:p, ] <- matrix(rnorm(k * p, 0, 0.05), nrow = p, ncol = k)
+
+  for (t in 1:p) {
+    Gamma0[t, ] <- as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
+  }
   
   for (t in (p+1):T) {
     Gamma0[t, ] <- 0
     for (r in 1:p) {
-      Gamma0[t, ] <- Gamma0[t, ] + t(A[, , r, 1]) %*% Gamma0[t - r, ]
+      Gamma0[t, ] <- Gamma0[t, ] + t(A[, , r, 1]) %*% Gamma0[t - r, ] + 
+        as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
     }
   }  
   
@@ -364,7 +368,8 @@ GS_mtmh_p <- function(df, #functional data
     for (t in (p+1):T) {
       Gamma[t, , i] <- 0
       for (r in 1:p) {
-        Gamma[t, , i] <- Gamma[t, , i] + t(A[, , r, i]) %*% Gamma[t - r, , i]
+        Gamma[t, , i] <- Gamma[t, , i] + t(A[, , r, i]) %*% Gamma[t - r, , i] + 
+          as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
       }
     }
     

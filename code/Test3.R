@@ -46,7 +46,7 @@ simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
   
   # random initial states for the first p time points
   for (t in 1:p) {
-    Gamma[t, ] <- rnorm(k)
+    Gamma[t, ] <- as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
     G[, t] <- as.vector(B %*% Gamma[t, ])
   }
   
@@ -54,7 +54,8 @@ simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
     Gamma[t, ] <- rep(0, k)
     for (r in 1:p) {
       if (!is.null(A_list[[r]])) {
-        Gamma[t, ] <- Gamma[t, ] + t(A_list[[r]]) %*% Gamma[t - r, ]
+        Gamma[t, ] <- Gamma[t, ] + t(A_list[[r]]) %*% Gamma[t - r, ] + 
+          as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
       }
     }
     G[, t] <- as.vector(B %*% Gamma[t, ])
@@ -70,7 +71,6 @@ simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
   colnames(data) <- c("x", paste0("t", 1:n_fun))
   
   return(data)
-
 }
 
 x <- seq(0, 1, length.out = 200)
@@ -84,14 +84,12 @@ A_list[[1]] <- 0.5 * diag(k)
 A_list[[2]] <- -0.3 * diag(k)
 A_list[[7]] <- 0.2 * matrix(runif(k * k, -0.1, 0.1), k, k)
 
-
-df_test3 <- simulation_test_VARp_selective(x, n_fun = 20, nbasis = 12,
+df_test3 <- simulation_test_VARp_selective(x, n_fun = 100, nbasis = 12,
                                            noise_sd = 0.1,
                                            alpha = alpha_test1,
                                            Phi = Phi_test1,
                                            A_list = A_list,
                                            k = k)
-
 
 #PSI with MTMH and mulitple orders --------------------------------------------
 
