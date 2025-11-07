@@ -307,8 +307,10 @@ GS_mtmh_p <- function(df, #functional data
     A0 <- rmatnorm(1, Aprior, V0, C %*% Phi0 %*% t(C))
     A[, , r, 1] <- A0
   }
+  
   A0_list <- lapply(1:p, function(r) A[, , r, 1])
-  A0_list <- make_stable_from_A_list(A0_list)
+  A0_list <- lapply(A0_list, t)
+  A0_list <- make_stable_from_A_list(A0_list, target_rho = 0.9)
   for (r in 1:p) A[, , r, 1] <- A0_list[[r]]
   
   Phi[, , 1] <- Phi0
@@ -320,9 +322,9 @@ GS_mtmh_p <- function(df, #functional data
   }
   
   for (t in (p+1):T) {
-    Gamma0[t, ] <- 0
+    Gamma0[t, ] <- rep(0, k)
     for (r in 1:p) {
-      Gamma0[t, ] <- Gamma0[t, ] + t(A[, , r, 1]) %*% Gamma0[t - r, ] + 
+      Gamma0[t, ] <- Gamma0[t, ] + A[, , r, 1] %*% Gamma0[t - r, ] + 
         as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
     }
   }  
@@ -339,10 +341,10 @@ GS_mtmh_p <- function(df, #functional data
     mus <- numeric(n)
     gs <- matrix(0, n, T)
     
-    mus <- B %*% alpha[,i-1]
+    mus <- as.vector(B %*% alpha[,i-1])
     mus <- matrix(rep(mus, T), n, T)
     for(t in 1:T){
-      gs[,t] <- B %*% Gamma[t, , i-1]
+      gs[,t] <- as.vector(B %*% Gamma[t, , i-1])
     }
     
     outsigma <- sample_sigma(fs, a0, b0, Phi[, ,i-1], T, n, mus, gs)
@@ -361,14 +363,15 @@ GS_mtmh_p <- function(df, #functional data
     }
     
     A_list <- lapply(1:p, function(r) A[, , r, i])
-    A_list <- make_stable_from_A_list(A_list)
+    A_list <- lapply(A_list, t)
+    A_list <- make_stable_from_A_list(A_list, target_rho = 0.9)
     for (r in 1:p) A[, , r, i] <- A_list[[r]]
     
     Gamma[1:p, , i] <- Gamma[1:p, ,i-1]
     for (t in (p+1):T) {
-      Gamma[t, , i] <- 0
+      Gamma[t, , i] <- rep(0, k)
       for (r in 1:p) {
-        Gamma[t, , i] <- Gamma[t, , i] + t(A[, , r, i]) %*% Gamma[t - r, , i] + 
+        Gamma[t, , i] <- Gamma[t, , i] + A[, , r, i] %*% Gamma[t - r, , i] + 
           as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
       }
     }

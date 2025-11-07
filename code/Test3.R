@@ -70,7 +70,8 @@ simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
   data <- data.frame(x = x, functions)
   colnames(data) <- c("x", paste0("t", 1:n_fun))
   
-  return(data)
+  list(data = data, 
+       gamma = Gamma)
 }
 
 x <- seq(0, 1, length.out = 200)
@@ -84,17 +85,19 @@ A_list[[1]] <- 0.5 * diag(k)
 A_list[[2]] <- -0.3 * diag(k)
 A_list[[7]] <- 0.2 * matrix(runif(k * k, -0.1, 0.1), k, k)
 
-df_test3 <- simulation_test_VARp_selective(x, n_fun = 100, nbasis = 12,
+df_test3 <- simulation_test_VARp_selective(x, n_fun = 20, nbasis = 12,
                                            noise_sd = 0.1,
                                            alpha = alpha_test1,
                                            Phi = Phi_test1,
                                            A_list = A_list,
                                            k = k)
 
+View(df_test3$gamma)
+
 #PSI with MTMH and mulitple orders --------------------------------------------
 
 tic()
-out_psi_mtmh_p <- GS_mtmh_p(df = df_test3, 
+out_psi_mtmh_p <- GS_mtmh_p(df = df_test3$data, 
                             a0 = 2, 
                             b0 = 1, 
                             avec0 = test1, 
@@ -116,5 +119,14 @@ out_psi_mtmh_p$b
 out_psi_mtmh_p$Gamma[ , , 1]
 out_psi_mtmh_p$A
 
-
 View(out_psi_mtmh_p$Gamma[, , 1])
+
+out_broken <- out
+
+sigma <- as.mcmc(out_broken$sigma)
+traceplot(log(sigma))
+
+matrix_list <- (apply(out$A, c(1, 2, 3), mean))
+matrix_list[, , 1]
+matrix_list[, , 2]
+matrix_list[, , 3]

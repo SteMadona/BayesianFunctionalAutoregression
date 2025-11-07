@@ -26,7 +26,7 @@ make_stable_from_A <- function(A, target_rho = 0.95){
 
 
 make_stable_from_A_list <- function(A_list, target_rho = 0.95) {
-  # Filtra i NULL sostituendoli con matrici nulle della giusta dimensione
+  # filter NULL matrices with NA matrices
   p <- length(A_list)
   k <- NULL
   for (A in A_list) {
@@ -36,21 +36,19 @@ make_stable_from_A_list <- function(A_list, target_rho = 0.95) {
   
   A_list <- lapply(A_list, function(A) if (is.null(A)) matrix(0, k, k) else A)
   
-  # Costruisci la companion matrix
+  #Build the companion matrix
   companion <- matrix(0, nrow = k * p, ncol = k * p)
   companion[1:k, ] <- do.call(cbind, A_list)
   if (p > 1) {
     companion[(k+1):(k*p), 1:(k*(p-1))] <- diag(k*(p-1))
   }
   
-  # Calcola il raggio spettrale
   ev <- eigen(companion, only.values = TRUE)$values
   rho <- max(abs(ev))
   
-  # Se già stabile, ritorna invariato
+  #if already stable, no changes
   if (rho <= target_rho) return(A_list)
   
-  # Scala tutte le matrici per stabilizzare
   scale_factor <- target_rho / rho
   A_list_stable <- lapply(A_list, function(A) A * scale_factor)
   

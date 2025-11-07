@@ -10,9 +10,13 @@ summary(sigma_trace)
 #alpha
 alpha_trace_phi_mh <- mcmc(t(out$alpha))
 apply(out$alpha, 1, mean)
+alpha_test2 <- c(-2, 0.5, 1, 0, 1.5, -1, 0, 1.5, -1.5, -1, 1, 0)
 
 #A
 A_post_mean <- apply(out$A, c(1, 2), mean)
+
+A_prova <- apply(out$A, c(1, 2), 
+                 function(u) mean(abs(u - A_test)))
 A_test <- make_stable_from_A(A_test2)
 
 A_error <- abs(A_post_mean - A_test)
@@ -106,3 +110,22 @@ posterior_reconstruction <- function(out, fs, x, k, t_list = c(5, 10, 15, 20)) {
 posterior_reconstruction(out, df_test2[, -1], x, 12)
 
 apply(B %*% out$Gamma[15, ,] + B %*% out$alpha, 2, mean)
+
+
+#start with a lower number of basis to get similar A matrix to the true one
+#frobenius distance for distanza tra la matrice vera e le matrici
+#simulate che ti lascia comunque l'identificabilità di A 
+#(bisogna normalizzare per la grid)
+#mi aspetto che la distanza aumenti all'aumentare del numero di 
+#basi scelte
+
+
+#per p > 1 partire dal caso p = 2 e vedere quando si rompe, 
+#(il problema potrebbero essere le matrici che non sono 
+#campionate in maniera indipendente)
+#posso ridurmi al caso vettoriale per vedere come fnuziona 
+#(che significa semplicemente ridurre a 1 il numero di basi che 
+#sto utilizzando)
+
+#sono due problemi diversi: l'identificabilità di A e il sampling 
+#indipendente delle matrici A
