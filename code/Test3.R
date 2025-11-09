@@ -8,6 +8,8 @@ library(Matrix)
 library(MASS)
 library(MCMCpack)
 library(tictoc)
+library(reshape2)
+library(gridExtra)
 
 source("code/UsefulFunctions.R")
 source("code/ConjugatePosteriors.R")
@@ -16,23 +18,12 @@ source("code/MHforPsi.R")
 
 set.seed(100)
 
-x <- seq(0, 1, length.out = 200)
-
-test1 <- rnorm(12, 0, 1) #alpha0 vector
-test2 <-  matrix(rnorm(10*12), 10, 12)  #Gamma0 matrix
-test3 <- matrix(rnorm(12*12), 12, 12) + diag(0.5, 12)   #A0 matrix
-
-
-alpha_test2 <- c(-2, 0.5, 1, 0, 1.5, -1, 0, 1.5, -1.5, -1, 1, 0)
-Phi_test2 <- riwish(205, diag(200))
-A_test2 <- matrix(rnorm(12*12), 12, 12) + diag(0.5, 12)
-
 simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
                                            alpha, Phi, A_list, k) {
   B <- bs(x, df = nbasis, degree = 3)
   C <- solve(crossprod(B)) %*% t(B)
   
-  A_list <- make_stable_from_A_list(A_list)
+  A_list <- make_stable_from_A_list(A_list, target_rho = 0.9)
   
   n <- length(x)
   mu <- as.vector(B %*% alpha)
@@ -54,8 +45,7 @@ simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
     Gamma[t, ] <- rep(0, k)
     for (r in 1:p) {
       if (!is.null(A_list[[r]])) {
-        Gamma[t, ] <- Gamma[t, ] + t(A_list[[r]]) %*% Gamma[t - r, ] + 
-          as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
+        Gamma[t, ] <- Gamma[t, ] + A_list[[r]] %*% Gamma[t - r, ] 
       }
     }
     G[, t] <- as.vector(B %*% Gamma[t, ])
@@ -74,25 +64,32 @@ simulation_test_VARp_selective <- function(x, n_fun, nbasis, noise_sd = 0.5,
        gamma = Gamma)
 }
 
+
+#A_test2 <- matrix(rnorm(12*12), 12, 12) + diag(0.5, 12)
+
+
 x <- seq(0, 1, length.out = 200)
-alpha_test1 <- c(-2, 0.5, 1, 0, 1.5, -1, 0, 1.5, -1.5, -1, 1, 0)
+alpha_test1 <- c(-2, 0.5, 1, 0, 1.5, -1)
 Phi_test1 <- riwish(205, diag(200))
-k <- 12
-p <- 10
+k <- 6
+p <- 3
+
+test1 <- rnorm(k, 0, 1) #alpha0 vector
+test3 <- matrix(0, k, k)  #A prior
 
 A_list <- vector("list", p)
-A_list[[1]] <- 0.5 * diag(k)
-A_list[[2]] <- -0.3 * diag(k)
-A_list[[7]] <- 0.2 * matrix(runif(k * k, -0.1, 0.1), k, k)
+A_list[[1]] <- rmatnorm(1, matrix(0, k, k), diag(0.5, k, k), diag(0.5, k, k))
+A_list[[2]] <- rmatnorm(1, matrix(0, k, k), diag(0.5, k, k), diag(0.5, k, k))
+A_list[[3]] <- matrix(0, k, k)
 
-df_test3 <- simulation_test_VARp_selective(x, n_fun = 20, nbasis = 12,
+df_test3 <- simulation_test_VARp_selective(x, n_fun = 100, nbasis = 6,
                                            noise_sd = 0.1,
                                            alpha = alpha_test1,
                                            Phi = Phi_test1,
                                            A_list = A_list,
                                            k = k)
 
-View(df_test3$gamma)
+df_test3$gamma
 
 #PSI with MTMH and mulitple orders --------------------------------------------
 
@@ -101,12 +98,12 @@ out_psi_mtmh_p <- GS_mtmh_p(df = df_test3$data,
                             a0 = 2, 
                             b0 = 1, 
                             avec0 = test1, 
-                            Sigma0 = diag(12), 
-                            V0 = diag(12), 
+                            Sigma0 = diag(6), 
+                            V0 = diag(6), 
                             Aprior = test3, 
-                            p = 10, 
-                            R = 10,
-                            burnin = 0,
+                            p = 3, 
+                            R = 1500,
+                            burnin = 500,
                             nbasis = 5,
                             nu0 = 12, 
                             S0 = diag(10), 
@@ -116,17 +113,17 @@ toc()
 
 out_psi_mtmh_p$sigma
 out_psi_mtmh_p$b
-out_psi_mtmh_p$Gamma[ , , 1]
+out_psi_mtmh_p$Gamma[ , , 20]
 out_psi_mtmh_p$A
 
-View(out_psi_mtmh_p$Gamma[, , 1])
-
-out_broken <- out
-
-sigma <- as.mcmc(out_broken$sigma)
+sigma <- as.mcmc(out_psi_mtmh_p$sigma)
 traceplot(log(sigma))
 
-matrix_list <- (apply(out$A, c(1, 2, 3), mean))
-matrix_list[, , 1]
-matrix_list[, , 2]
-matrix_list[, , 3]
+matrix_list <- (apply(out_psi_mtmh_p$A, c(1, 2, 3), mean))
+mean(abs(matrix_list[, , 1]))
+mean(abs(matrix_list[, , 2]))
+mean(abs(matrix_list[, , 3]))
+
+(apply(out_psi_mtmh_p$A, c(1, 2, 3), mean))
+
+View(df_test3$data)

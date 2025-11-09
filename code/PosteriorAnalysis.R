@@ -30,6 +30,57 @@ ggplot(A_melt, aes(Var2, Var1, fill = value)) +
   coord_fixed() +
   theme_minimal()
 
+#A (p > 1)
+plot_A_posteriors_array <- function(A_array, A_test_list, titles = NULL) {
+  # Controlli di base
+  stopifnot(length(dim(A_array)) == 4)
+  
+  k <- dim(A_array)[1]
+  p <- dim(A_array)[3]
+  n_iter <- dim(A_array)[4]
+  
+  stopifnot(length(A_test_list) == p)
+  
+  plots <- vector("list", p)
+  
+  for (i in seq_len(p)) {
+    # Estrae i campioni per la matrice A_i (kxkxn_iter)
+    A_i <- A_array[, , i, ]
+    A_post_mean <- apply(A_i, c(1, 2), mean)
+    
+    # Matrice "vera"
+    A_test <- make_stable_from_A(A_test_list[[i]])
+    
+    # Errore
+    A_error <- abs(A_post_mean - A_test)
+    A_melt <- melt(A_error)
+    
+    title_i <- if (!is.null(titles) && length(titles) >= i) {
+      titles[i]
+    } else {
+      paste0("Matrix A[", i, "] : Posterior Mean vs True")
+    }
+    
+    p_i <- ggplot(A_melt, aes(Var2, Var1, fill = value)) +
+      geom_tile() +
+      scale_fill_gradient(low = "white", high = "red") +
+      labs(title = title_i,
+           x = NULL, y = NULL, fill = "|error|") +
+      coord_fixed() +
+      theme_minimal()
+    
+    plots[[i]] <- p_i
+  }
+  
+  # Mostra tutti i plot insieme (massimo 2 per riga)
+  do.call(grid.arrange, c(plots, ncol = min(p, 2)))
+  
+  invisible(plots)
+}
+
+plot_A_posteriors_array(out_psi_mtmh_p$A, A_list)
+
+
 
 #Phi
 Phi_post_mean <- apply(out$Phi, c(1, 2), mean)

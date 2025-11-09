@@ -324,8 +324,7 @@ GS_mtmh_p <- function(df, #functional data
   for (t in (p+1):T) {
     Gamma0[t, ] <- rep(0, k)
     for (r in 1:p) {
-      Gamma0[t, ] <- Gamma0[t, ] + A[, , r, 1] %*% Gamma0[t - r, ] + 
-        as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
+      Gamma0[t, ] <- Gamma0[t, ] + A[, , r, 1] %*% Gamma0[t - r, ] 
     }
   }  
   
@@ -371,8 +370,7 @@ GS_mtmh_p <- function(df, #functional data
     for (t in (p+1):T) {
       Gamma[t, , i] <- rep(0, k)
       for (r in 1:p) {
-        Gamma[t, , i] <- Gamma[t, , i] + A[, , r, i] %*% Gamma[t - r, , i] + 
-          as.vector(mvtnorm::rmvnorm(1, sigma = diag(1e-4, k)))
+        Gamma[t, , i] <- Gamma[t, , i] + A[, , r, i] %*% Gamma[t - r, , i] 
       }
     }
     
